@@ -94,7 +94,15 @@
       "Bash(env *)",
       "Bash(export *)",
       "Bash(source *)",
-      "Bash(. *)"
+      "Bash(. *)",
+      "Bash(bash /c/Users/gustavo.rodriguezl/src/garodriguezlp/pgdbtool/support/scripts/up.sh)",
+      "Bash(docker --version)",
+      "Bash(bash /c/Users/gustavo.rodriguezl/src/garodriguezlp/pgdbtool/support/scripts/down.sh)",
+      "Read(//c/Users/gustavo.rodriguezl/src/garodriguezlp/pgdbtool/**)",
+      "Bash(echo \"exit: $?\")"
+    ],
+    "additionalDirectories": [
+      "\\tmp"
     ]
   }
 }

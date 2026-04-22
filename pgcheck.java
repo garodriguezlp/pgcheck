@@ -1,5 +1,10 @@
 ///usr/bin/env jbang "$0" "$@" ; exit $?
+
 //JAVA 17+
+
+//COMPILE_OPTIONS -encoding UTF-8
+//RUNTIME_OPTIONS -Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8
+
 //DEPS info.picocli:picocli:4.7.6
 //DEPS org.postgresql:postgresql:42.7.3
 //DEPS com.fasterxml.jackson.core:jackson-databind:2.17.3

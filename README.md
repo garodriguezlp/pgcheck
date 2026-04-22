@@ -6,10 +6,11 @@ LLM agents need to inspect databases — checking row counts, validating schema,
 
 ## Prerequisites
 
-- [JBang](https://www.jbang.dev/download/) — `sdk install jbang` or `brew install jbangdev/tap/jbang`
-- Java 17+ (JBang will download one automatically if not present)
+- Java 17+ — JBang downloads one automatically if not present
 - A running PostgreSQL instance
 - [Docker](https://docs.docker.com/get-docker/) — only for the local support environment
+
+JBang itself is bundled via the wrapper scripts in the repo root (`jbang` / `jbang.cmd` / `jbang.ps1`). No pre-installation required.
 
 ## Quick start
 
@@ -23,7 +24,11 @@ cp .pgcheck.properties.example ~/.pgcheck.properties
 **2. Run a query:**
 
 ```sh
-jbang pgcheck.java --sql "SELECT count(*) FROM information_schema.tables"
+# Unix/macOS — wrapper handles JBang download on first run
+./jbang pgcheck.java --sql "SELECT count(*) FROM information_schema.tables"
+
+# Windows
+jbang.cmd pgcheck.java --sql "SELECT count(*) FROM information_schema.tables"
 ```
 
 Output:
@@ -154,7 +159,7 @@ allow-writes=true
 bash support/scripts/up.sh
 
 # Run a query (no properties file needed — defaults match the local environment)
-jbang pgcheck.java --sql "SELECT 1"
+./jbang pgcheck.java --sql "SELECT 1"
 
 # Stop and remove volumes
 bash support/scripts/down.sh
@@ -162,9 +167,13 @@ bash support/scripts/down.sh
 
 The `store` schema has two tables (`customers`, `orders`) with seed data for testing.
 
+## JBang wrapper
+
+`jbang`, `jbang.cmd`, and `jbang.ps1` in the repo root are the official JBang wrapper scripts. They bootstrap JBang automatically on first run — no manual installation needed. Generated via `jbang wrapper install`.
+
 ## JBang catalog
 
-`jbang-catalog.json` defines a local alias so you can run `jbang pgcheck` from the repo root, or `jbang pgcheck@garodriguezlp/pgcheck` remotely once the repo is public.
+`jbang-catalog.json` defines a local alias so you can run `./jbang pgcheck` from the repo root, or `jbang pgcheck@garodriguezlp/pgcheck` remotely once the repo is public.
 
 ## Agent skill setup
 
