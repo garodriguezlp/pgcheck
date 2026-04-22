@@ -1,9 +1,11 @@
 # pgcheck
 
-One-shot PostgreSQL executor for LLM agents. Supply SQL, get structured JSON back, done.
+Minimal, non-interactive PostgreSQL CLI designed for LLM agent workflows. Supply SQL, receive
+structured JSON, and exit.
 
-No interactive shell, no ANSI decoration — clean output agents can parse directly. Implemented as a
-single JBang-runnable `.java` file; no build step required.
+No interactive shell, no ANSI decoration, and no human-first formatting noise: output is deterministic
+and easy for agents to parse reliably. Implemented as a single JBang-runnable `.java` file; no build
+step required.
 
 **Prerequisites:** Java 17+ (JBang auto-downloads if
 missing) · [Docker](https://docs.docker.com/get-docker/) for the local database.
@@ -36,46 +38,13 @@ jbang.cmd pgcheck.java --sql "SELECT id, name, email FROM store.customers"
   "statement_type": "SELECT",
   "row_count": 5,
   "truncated": false,
-  "columns": [
-    {
-      "name": "id",
-      "type": "int4"
-    },
-    {
-      "name": "name",
-      "type": "varchar"
-    },
-    {
-      "name": "email",
-      "type": "varchar"
-    }
-  ],
+  "columns": [{ "name": "id", "type": "int4" }, { "name": "name", "type": "varchar" }, { "name": "email", "type": "varchar" }],
   "rows": [
-    {
-      "id": 1,
-      "name": "Alice Martin",
-      "email": "alice@example.com"
-    },
-    {
-      "id": 2,
-      "name": "Bob Chen",
-      "email": "bob@example.com"
-    },
-    {
-      "id": 3,
-      "name": "Carol Davis",
-      "email": "carol@example.com"
-    },
-    {
-      "id": 4,
-      "name": "David Kim",
-      "email": "david@example.com"
-    },
-    {
-      "id": 5,
-      "name": "Eve Nakamura",
-      "email": "eve@example.com"
-    }
+    { "id": 1, "name": "Alice Martin", "email": "alice@example.com" },
+    { "id": 2, "name": "Bob Chen", "email": "bob@example.com" },
+    { "id": 3, "name": "Carol Davis", "email": "carol@example.com" },
+    { "id": 4, "name": "David Kim", "email": "david@example.com" },
+    { "id": 5, "name": "Eve Nakamura", "email": "eve@example.com" }
   ],
   "duration_ms": 14
 }
@@ -131,36 +100,11 @@ Usage: pgcheck [-hVv] [--stdin] [--allow-writes] [--file=<file>]
   "statement_type": "SELECT",
   "row_count": 3,
   "truncated": false,
-  "columns": [
-    {
-      "name": "customer",
-      "type": "varchar"
-    },
-    {
-      "name": "order_count",
-      "type": "int8"
-    },
-    {
-      "name": "total_spent",
-      "type": "int8"
-    }
-  ],
+  "columns": [{ "name": "customer", "type": "varchar" }, { "name": "order_count", "type": "int8" }, { "name": "total_spent", "type": "int8" }],
   "rows": [
-    {
-      "customer": "Alice Martin",
-      "order_count": 2,
-      "total_spent": 17499
-    },
-    {
-      "customer": "Bob Chen",
-      "order_count": 2,
-      "total_spent": 7399
-    },
-    {
-      "customer": "Carol Davis",
-      "order_count": 2,
-      "total_spent": 28100
-    }
+    { "customer": "Alice Martin", "order_count": 2, "total_spent": 17499 },
+    { "customer": "Bob Chen", "order_count": 2, "total_spent": 7399 },
+    { "customer": "Carol Davis", "order_count": 2, "total_spent": 28100 }
   ],
   "duration_ms": 12
 }
