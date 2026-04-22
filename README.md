@@ -80,6 +80,7 @@ Usage: pgcheck [-hVv] [--stdin] [--allow-writes] [--file=<file>]
                         Maximum rows returned for SELECT queries (default: 100)
       --timeout=<timeout>
                         Query timeout in seconds (default: 30)
+      --pretty          Pretty-print JSON output
       --allow-writes    Allow DML write operations; DDL always blocked (operator-managed)
       --url=<url>       JDBC connection URL (operator-managed)
       --username=<username>
@@ -173,5 +174,6 @@ allow-writes=true
 ## Agent skill setup
 
 - **Claude Code** — `.claude/skills/pgcheck.md` is auto-discovered when working in this repo.
+  It documents every option, the full JSON output schema, error types, and safe query patterns — everything an agent needs to invoke pgcheck correctly without human assistance.
 - **Other agents** — `AGENTS.md` at the repo root is picked up automatically by most agent
   frameworks.
