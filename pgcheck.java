@@ -31,7 +31,7 @@ import java.util.concurrent.Callable;
     mixinStandardHelpOptions = true,
     version = "pgcheck 1.0",
     description = "One-shot PostgreSQL executor for LLM agents",
-    defaultValueProvider = pgcheck.DefaultProvider.class
+    defaultValueProvider = PropertiesDefaultProvider.class
 )
 public class pgcheck implements Callable<Integer> {
 
@@ -103,12 +103,6 @@ public class pgcheck implements Callable<Integer> {
             }
             writer.writeSqlError(e, durationMs);
             return ExitCode.SQL_ERROR;
-        }
-    }
-
-    static class DefaultProvider extends PropertiesDefaultProvider {
-        DefaultProvider() {
-            super(new File(System.getProperty("user.home"), ".pgcheck.properties"));
         }
     }
 }
