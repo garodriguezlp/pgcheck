@@ -7,10 +7,30 @@ LLM agents need to inspect databases — checking row counts, validating schema,
 ## Prerequisites
 
 - Java 17+ — JBang downloads one automatically if not present
-- A running PostgreSQL instance
-- [Docker](https://docs.docker.com/get-docker/) — only for the local support environment
+- [Docker](https://docs.docker.com/get-docker/) — required to spin up the local PostgreSQL instance
 
 JBang itself is bundled via the wrapper scripts in the repo root (`jbang` / `jbang.cmd` / `jbang.ps1`). No pre-installation required.
+
+## Start the database first
+
+pgcheck needs a running PostgreSQL instance. The repo ships a Docker Compose environment that takes care of everything — creating the database, schema, and seed data.
+
+```sh
+# Start PostgreSQL 16 (detached)
+bash support/scripts/up.sh
+```
+
+This runs `docker compose up -d` inside `support/` and waits for the healthcheck to pass. The database is ready when the command exits cleanly.
+
+To stop the container and remove its volumes when you are done:
+
+```sh
+bash support/scripts/down.sh
+```
+
+The `store` schema contains two tables (`customers`, `orders`) with seed data you can query straight away.
+
+> **Already have a database?** Skip this step and point pgcheck at it by editing `~/.pgcheck.properties` (see the reference table below).
 
 ## Quick start
 
@@ -152,21 +172,6 @@ allow-writes=true
 
 **DDL is always blocked** regardless of `allow-writes`. `CREATE`, `DROP`, `ALTER`, `TRUNCATE`, `RENAME`, and `COMMENT` are rejected before execution.
 
-## Local development environment
-
-```sh
-# Start PostgreSQL 16 via Docker Compose
-bash support/scripts/up.sh
-
-# Run a query (no properties file needed — defaults match the local environment)
-./jbang pgcheck.java --sql "SELECT 1"
-
-# Stop and remove volumes
-bash support/scripts/down.sh
-```
-
-The `store` schema has two tables (`customers`, `orders`) with seed data for testing.
-
 ## JBang wrapper
 
 `jbang`, `jbang.cmd`, and `jbang.ps1` in the repo root are the official JBang wrapper scripts. They bootstrap JBang automatically on first run — no manual installation needed. Generated via `jbang wrapper install`.
@@ -178,5 +183,4 @@ The `store` schema has two tables (`customers`, `orders`) with seed data for tes
 ## Agent skill setup
 
 - **Claude Code** — `.claude/skills/pgcheck.md` is auto-discovered when working in this repo.
-- **GitHub Copilot** — `.github/copilot-instructions.md` carries the skill content.
-- **Other agents** — copy or reference `agent-skill.md` from the repo root.
+- **Other agents** — `AGENTS.md` at the repo root contains both coding guidelines and the pgcheck skill; most agent frameworks pick it up automatically.
