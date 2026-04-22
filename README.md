@@ -2,88 +2,98 @@
 
 One-shot PostgreSQL executor for LLM agents. Supply SQL, get structured JSON back, done.
 
-LLM agents need to inspect databases — checking row counts, validating schema, confirming data after migrations. Standard PSQL clients are interactive and ANSI-decorated. pgcheck takes SQL, executes it, and writes a predictable JSON envelope to stdout that agents can parse directly. JBang turns a single `.java` file into a runnable script — `jbang pgcheck.java --sql "..."` just works, no build step required.
+No interactive shell, no ANSI decoration — clean output agents can parse directly. Implemented as a
+single JBang-runnable `.java` file; no build step required.
 
-## Prerequisites
+**Prerequisites:** Java 17+ (JBang auto-downloads if
+missing) · [Docker](https://docs.docker.com/get-docker/) for the local database.
 
-- Java 17+ — JBang downloads one automatically if not present
-- [Docker](https://docs.docker.com/get-docker/) — required to spin up the local PostgreSQL instance
-
-JBang itself is bundled via the wrapper scripts in the repo root (`jbang` / `jbang.cmd` / `jbang.ps1`). No pre-installation required.
-
-## Start the database first
-
-pgcheck needs a running PostgreSQL instance. The repo ships a Docker Compose environment that takes care of everything — creating the database, schema, and seed data.
+## Start the local database
 
 ```sh
-# Start PostgreSQL 16 (detached)
-bash support/scripts/up.sh
+bash support/scripts/up.sh   # start PostgreSQL 16, wait for healthcheck
+bash support/scripts/down.sh # stop and remove volumes when done
 ```
 
-This runs `docker compose up -d` inside `support/` and waits for the healthcheck to pass. The database is ready when the command exits cleanly.
+The `store` schema is seeded with `customers` and `orders` data ready to query.
 
-To stop the container and remove its volumes when you are done:
-
-```sh
-bash support/scripts/down.sh
-```
-
-The `store` schema contains two tables (`customers`, `orders`) with seed data you can query straight away.
-
-> **Already have a database?** Skip this step and point pgcheck at it by editing `~/.pgcheck.properties` (see the reference table below).
+> **Already have a database?** Copy `.pgcheck.properties.example` to `~/.pgcheck.properties` and
+> edit the connection details.
 
 ## Quick start
 
-**1. Configure the connection** (optional — hardcoded defaults match the local dev environment):
-
 ```sh
-cp .pgcheck.properties.example ~/.pgcheck.properties
-# Edit with your connection details
-```
-
-**2. Run a query:**
-
-```sh
-# Unix/macOS — wrapper handles JBang download on first run
-./jbang pgcheck.java --sql "SELECT count(*) FROM information_schema.tables"
+# Unix/macOS
+./jbang pgcheck.java --sql "SELECT id, name, email FROM store.customers"
 
 # Windows
-jbang.cmd pgcheck.java --sql "SELECT count(*) FROM information_schema.tables"
+jbang.cmd pgcheck.java --sql "SELECT id, name, email FROM store.customers"
 ```
-
-Output:
 
 ```json
 {
   "status": "ok",
   "statement_type": "SELECT",
-  "row_count": 1,
+  "row_count": 5,
   "truncated": false,
-  "columns": [{ "name": "count", "type": "int8" }],
-  "rows": [{ "count": 67 }],
+  "columns": [
+    {
+      "name": "id",
+      "type": "int4"
+    },
+    {
+      "name": "name",
+      "type": "varchar"
+    },
+    {
+      "name": "email",
+      "type": "varchar"
+    }
+  ],
+  "rows": [
+    {
+      "id": 1,
+      "name": "Alice Martin",
+      "email": "alice@example.com"
+    },
+    {
+      "id": 2,
+      "name": "Bob Chen",
+      "email": "bob@example.com"
+    },
+    {
+      "id": 3,
+      "name": "Carol Davis",
+      "email": "carol@example.com"
+    },
+    {
+      "id": 4,
+      "name": "David Kim",
+      "email": "david@example.com"
+    },
+    {
+      "id": 5,
+      "name": "Eve Nakamura",
+      "email": "eve@example.com"
+    }
+  ],
   "duration_ms": 14
 }
 ```
 
-## `~/.pgcheck.properties` reference
+## Configuration — `~/.pgcheck.properties`
 
-| Key | Default | Description |
-|-----|---------|-------------|
-| `url` | `jdbc:postgresql://localhost:5432/pgcheck_demo` | JDBC connection URL |
-| `username` | `pgcheck` | Database username |
-| `password` | `pgcheck` | Database password |
-| `allow-writes` | `false` | Allow DML (INSERT/UPDATE/DELETE). DDL always blocked. |
-| `max-rows` | `100` | Maximum rows returned for SELECT queries |
-| `timeout` | `30` | Query timeout in seconds |
+| Key            | Default                                         | Description                                           |
+|----------------|-------------------------------------------------|-------------------------------------------------------|
+| `url`          | `jdbc:postgresql://localhost:5432/pgcheck_demo` | JDBC connection URL                                   |
+| `username`     | `pgcheck`                                       | Database username                                     |
+| `password`     | `pgcheck`                                       | Database password                                     |
+| `allow-writes` | `false`                                         | Allow DML (INSERT/UPDATE/DELETE). DDL always blocked. |
+| `max-rows`     | `100`                                           | Maximum rows returned for SELECT queries              |
+| `timeout`      | `30`                                            | Query timeout in seconds                              |
 
-### Operator vs. agent options
-
-| Option | Who sets it | Notes |
-|--------|-------------|-------|
-| `url`, `username`, `password` | Operator (properties file) | Never pass via CLI from an agent |
-| `allow-writes` | Operator (properties file) | Policy decision; agent must not override |
-| `--sql`, `--file`, `--stdin` | Agent (CLI) | Primary input — exactly one required |
-| `--max-rows`, `--timeout` | Agent (CLI) | Safe to tune per query |
+Connection settings (`url`, `username`, `password`, `allow-writes`) are operator-managed — set in
+the properties file, never passed via CLI from an agent.
 
 ## CLI usage
 
@@ -113,7 +123,7 @@ Usage: pgcheck [-hVv] [--stdin] [--allow-writes] [--file=<file>]
 
 ## JSON output
 
-### Successful SELECT
+### SELECT
 
 ```json
 {
@@ -122,65 +132,102 @@ Usage: pgcheck [-hVv] [--stdin] [--allow-writes] [--file=<file>]
   "row_count": 3,
   "truncated": false,
   "columns": [
-    { "name": "id",    "type": "int4"    },
-    { "name": "email", "type": "varchar" }
+    {
+      "name": "customer",
+      "type": "varchar"
+    },
+    {
+      "name": "order_count",
+      "type": "int8"
+    },
+    {
+      "name": "total_spent",
+      "type": "int8"
+    }
   ],
   "rows": [
-    { "id": 1, "email": "alice@example.com" },
-    { "id": 2, "email": "bob@example.com"   }
+    {
+      "customer": "Alice Martin",
+      "order_count": 2,
+      "total_spent": 17499
+    },
+    {
+      "customer": "Bob Chen",
+      "order_count": 2,
+      "total_spent": 7399
+    },
+    {
+      "customer": "Carol Davis",
+      "order_count": 2,
+      "total_spent": 28100
+    }
   ],
   "duration_ms": 12
 }
 ```
 
-### Successful DML
+### DML
 
 ```json
-{ "status": "ok", "statement_type": "UPDATE", "rows_affected": 5, "duration_ms": 8 }
+{
+  "status": "ok",
+  "statement_type": "UPDATE",
+  "rows_affected": 3,
+  "duration_ms": 8
+}
 ```
 
 ### Errors
 
 ```json
-{ "status": "error", "error_type": "policy_violation", "message": "Write operations are disabled...", "statement_type": "UPDATE" }
-{ "status": "error", "error_type": "sql_error", "message": "ERROR: column \"x\" does not exist", "sql_state": "42703", "duration_ms": 3 }
-{ "status": "error", "error_type": "connection_error", "message": "Connection refused to localhost:5432" }
-{ "status": "error", "error_type": "input_error", "message": "SQL input is empty" }
+{
+  "status": "error",
+  "error_type": "policy_violation",
+  "message": "Write operations are disabled...",
+  "statement_type": "UPDATE"
+}
+{
+  "status": "error",
+  "error_type": "sql_error",
+  "message": "ERROR: column \"x\" does not exist",
+  "sql_state": "42703",
+  "duration_ms": 3
+}
+{
+  "status": "error",
+  "error_type": "connection_error",
+  "message": "Connection refused to localhost:5432"
+}
+{
+  "status": "error",
+  "error_type": "input_error",
+  "message": "SQL input is empty"
+}
 ```
 
 ## Exit codes
 
-| Code | Meaning |
-|------|---------|
-| `0` | SQL executed successfully |
-| `1` | SQL execution error |
-| `2` | Policy violation (write or DDL blocked) |
-| `3` | Input error |
-| `4` | Connection error |
-
-Agents can branch on `$?` to distinguish infrastructure problems (`4`) from query errors (`1`) from policy (`2`).
+| Code | Meaning                                 |
+|------|-----------------------------------------|
+| `0`  | SQL executed successfully               |
+| `1`  | SQL execution error                     |
+| `2`  | Policy violation (write or DDL blocked) |
+| `3`  | Input error                             |
+| `4`  | Connection error                        |
 
 ## Mutation policy
 
-pgcheck defaults to **read-only**. `SELECT`, `WITH`, `TABLE`, `VALUES`, `SHOW`, and `EXPLAIN` are allowed by default.
+Read-only by default. Allowed: `SELECT`, `WITH`, `TABLE`, `VALUES`, `SHOW`, `EXPLAIN`. DDL (
+`CREATE`, `DROP`, `ALTER`, `TRUNCATE`, `RENAME`, `COMMENT`) is always blocked.
 
-To enable writes, add to `~/.pgcheck.properties`:
+To enable DML writes, add to `~/.pgcheck.properties`:
 
 ```properties
 allow-writes=true
 ```
 
-**DDL is always blocked** regardless of `allow-writes`. `CREATE`, `DROP`, `ALTER`, `TRUNCATE`, `RENAME`, and `COMMENT` are rejected before execution.
-
-## JBang wrapper
-
-`jbang`, `jbang.cmd`, and `jbang.ps1` in the repo root are the official JBang wrapper scripts. They bootstrap JBang automatically on first run — no manual installation needed. Generated via `jbang wrapper install`.
-
-## JBang catalog
-
-`jbang-catalog.json` defines a local alias so you can run `./jbang pgcheck` from the repo root, or `jbang pgcheck@garodriguezlp/pgcheck` remotely once the repo is public.
-
 ## Agent skill setup
 
 - **Claude Code** — `.claude/skills/pgcheck.md` is auto-discovered when working in this repo.
-- **Other agents** — `AGENTS.md` at the repo root contains both coding guidelines and the pgcheck skill; most agent frameworks pick it up automatically.
+- **Other agents** — `AGENTS.md` at the repo root is picked up automatically by most agent
+  frameworks.
