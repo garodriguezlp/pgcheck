@@ -1,0 +1,28 @@
+# pgcheck operator configuration
+# Copy this file to ~/.pgcheck.properties and fill in your values.
+# These are operator-managed settings. Do not expose this file to LLM agents.
+#
+# All keys are optional. Defaults are shown in comments.
+
+# JDBC connection URL
+# url=jdbc:postgresql://localhost:5432/postgres
+
+# Database username
+# username=postgres
+
+# Database password
+# password=
+
+# Allow DML write operations (INSERT, UPDATE, DELETE, MERGE).
+# DDL (CREATE, DROP, ALTER, TRUNCATE) is always blocked regardless of this setting.
+# Default: false (read-only)
+# allow-writes=false
+
+# Maximum rows returned for SELECT queries.
+# Increase if you need larger result sets; decrease to reduce agent context size.
+# Default: 100
+# max-rows=100
+
+# Query timeout in seconds. Execution is cancelled after this duration.
+# Default: 30
+# timeout=30

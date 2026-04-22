@@ -1,0 +1,8 @@
+{
+  "aliases": {
+    "pgcheck": {
+      "script-ref": "pgcheck.java",
+      "description": "One-shot PostgreSQL executor for LLM agents"
+    }
+  }
+}

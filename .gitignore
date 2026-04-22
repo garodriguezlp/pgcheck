@@ -1,0 +1,19 @@
+# Operator secrets — never commit
+.pgcheck.properties
+
+# JBang cache
+.jbang/
+
+# Java compilation artifacts
+*.class
+
+# macOS
+.DS_Store
+
+# Editor
+.idea/
+*.iml
+.vscode/
+
+# Docker volumes (if any are added locally)
+support/data/
