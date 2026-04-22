@@ -19,6 +19,17 @@ bash support/scripts/down.sh # stop and remove volumes when done
 
 The `store` schema is seeded with `customers` and `orders` data ready to query.
 
+> **Custom image:** The Compose file defaults to `postgres:16.3`. To use a different image — for
+> example, a registry-local mirror or a vendor-specific build — set the `POSTGRES_IMAGE` environment
+> variable before running the scripts:
+>
+> ```sh
+> PGCHECK_POSTGRES_IMAGE=my-registry.example.com/postgres:16 bash support/scripts/up.sh
+> ```
+>
+> Any image that exposes the standard PostgreSQL wire protocol on port 5432 and supports the
+> `pg_isready` health-check command should be compatible.
+
 > **Already have a database?** Copy `.pgcheck.properties.example` to `~/.pgcheck.properties` and
 > edit the connection details.
 
