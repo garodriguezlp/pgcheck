@@ -67,25 +67,38 @@ public class pgcheck implements Callable<Integer> {
     @Override
     public Integer call() {
         if (verbose) configureLogging(true);
-        ResponseWriter writer = new ResponseWriter();
+        ResponseWriter writer = new ResponseWriter(queryOptions.pretty);
 
-        String sql;
+        String sql = resolveSqlOrWriteError(writer);
+        if (sql == null) return ExitCode.INPUT_ERROR;
+
+        StatementType type = classifyAndEnforceOrWriteError(sql, writer);
+        if (type == null) return ExitCode.POLICY_VIOLATION;
+
+        return executeOrWriteError(sql, type, writer);
+    }
+
+    private String resolveSqlOrWriteError(ResponseWriter writer) {
         try {
-            sql = sqlInput.resolve();
+            return sqlInput.resolve();
         } catch (InputException e) {
             writer.writeInputError(e.getMessage());
-            return ExitCode.INPUT_ERROR;
+            return null;
         }
+    }
 
+    private StatementType classifyAndEnforceOrWriteError(String sql, ResponseWriter writer) {
         StatementType type = StatementType.classify(sql);
-
         try {
             new PolicyGuard(dbConfig.allowWrites).enforce(type);
+            return type;
         } catch (PolicyViolationException e) {
             writer.writePolicyViolation(e);
-            return ExitCode.POLICY_VIOLATION;
+            return null;
         }
+    }
 
+    private Integer executeOrWriteError(String sql, StatementType type, ResponseWriter writer) {
         QueryExecutor executor = new QueryExecutor(
             dbConfig.url, dbConfig.username, dbConfig.password,
             queryOptions.timeout, queryOptions.maxRows
@@ -152,6 +165,10 @@ class QueryOptions {
             descriptionKey = "timeout",
             converter = QueryOptions.PositiveIntConverter.class)
     int timeout = 30;
+
+        @Option(names = "--pretty",
+            description = "Pretty-print JSON output (default: false)")
+        boolean pretty = false;
 
     static class PositiveIntConverter implements ITypeConverter<Integer> {
         @Override
@@ -391,6 +408,15 @@ class QueryExecutor {
 // ---- ResponseWriter ----
 class ResponseWriter {
     private final ObjectMapper mapper = new ObjectMapper();
+    private final boolean pretty;
+
+    ResponseWriter() {
+        this(false);
+    }
+
+    ResponseWriter(boolean pretty) {
+        this.pretty = pretty;
+    }
 
     void writeSuccess(QueryResult result) {
         ObjectNode node = mapper.createObjectNode();
@@ -452,7 +478,11 @@ class ResponseWriter {
 
     private void emit(ObjectNode node) {
         try {
-            System.out.println(mapper.writeValueAsString(node));
+            if (pretty) {
+                System.out.println(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(node));
+            } else {
+                System.out.println(mapper.writeValueAsString(node));
+            }
         } catch (Exception e) {
             Logger.error(e, "Failed to serialize response");
         }

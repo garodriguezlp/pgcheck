@@ -99,7 +99,14 @@
       "Bash(docker --version)",
       "Bash(bash /c/Users/gustavo.rodriguezl/src/garodriguezlp/pgdbtool/support/scripts/down.sh)",
       "Read(//c/Users/gustavo.rodriguezl/src/garodriguezlp/pgdbtool/**)",
-      "Bash(echo \"exit: $?\")"
+      "Bash(echo \"exit: $?\")",
+      "Bash(git -C c:/Users/gustavo.rodriguezl/src/garodriguezlp/pgdbtool status)",
+      "Bash(git -C c:/Users/gustavo.rodriguezl/src/garodriguezlp/pgdbtool diff HEAD)",
+      "Bash(git -C c:/Users/gustavo.rodriguezl/src/garodriguezlp/pgdbtool push)",
+      "Bash(git -C \"c:/Users/gustavo.rodriguezl/src/garodriguezlp/pgdbtool\" status)",
+      "Bash(git -C \"c:/Users/gustavo.rodriguezl/src/garodriguezlp/pgdbtool\" diff)",
+      "Bash(git -C \"c:/Users/gustavo.rodriguezl/src/garodriguezlp/pgdbtool\" log --oneline -5)",
+      "Bash(git -C \"c:/Users/gustavo.rodriguezl/src/garodriguezlp/pgdbtool\" add AGENTS.md pgcheck.java .claude/settings.local.json)"
     ],
     "additionalDirectories": [
       "\\tmp"

@@ -1,67 +1,87 @@
-# Coding Guidelines
+# pgcheck — Agent Reference
 
-These guidelines apply to all code in this repository, regardless of the AI agent or assistant generating it.
+## Project
 
-## Core principles
+One-shot PostgreSQL executor for LLM agents. Takes SQL, returns structured JSON to stdout, exits. No interactive shell, no ANSI decoration — clean output agents can parse directly.
 
-- **SOLID**: Single responsibility, open/closed, Liskov substitution, interface segregation, dependency inversion.
-- **Clean Code**: Names are honest and intention-revealing. Code reads like prose. No clever tricks.
-- **One level of abstraction per method**: A method either orchestrates or operates — not both. If a method calls helpers, it should contain only calls to helpers at the same conceptual level.
-- **Small, single-purpose units**: Functions, methods, and classes do one thing. If you need "and" to describe what a unit does, split it.
-- **No surprises**: Side effects are explicit, not hidden. A reader should be able to predict what a function does from its name alone.
+Implemented as a single JBang-runnable Java file (`pgcheck.java`). JBang handles compilation and dependency download on first run — no build step required.
 
-## Naming
+## Tech stack
 
-- Names encode intent, not type (`userEmail`, not `emailStr`).
-- Booleans read as questions (`isEmpty`, `hasExpired`).
-- Methods that return values use noun phrases; methods that perform actions use verb phrases.
-- Avoid abbreviations unless they are universally understood in the domain (e.g., `id`, `url`).
+- Java 17+ · JBang (bundled wrappers: `jbang`, `jbang.cmd`, `jbang.ps1`)
+- picocli · Jackson · PostgreSQL JDBC · tinylog
+- Docker Compose for local dev database
 
-## Functions and methods
+## Key files
 
-- Short: aim for functions that fit on a screen without scrolling.
-- One entry, one exit point — unless early returns clarify logic (guard clauses are fine).
-- No flag arguments. A boolean parameter that changes a function's behavior is two functions in disguise.
-- Prefer returning values to mutating arguments.
+| Path | Purpose |
+|------|---------|
+| `pgcheck.java` | Entire implementation — one file, all classes |
+| `.pgcheck.properties.example` | Connection config template → copy to `~/.pgcheck.properties` |
+| `support/docker-compose.yml` | Local PostgreSQL 16 instance |
+| `support/initdb/` | Schema + seed SQL applied on container start |
+| `.claude/skills/pgcheck.md` | pgcheck skill (Claude Code auto-discovers) |
+| `jbang-catalog.json` | Local alias: `./jbang pgcheck` |
 
-## Classes and modules
+## Local database
 
-- A class encapsulates a coherent concept, not a grab-bag of utilities.
-- Constructors establish a valid object; they do not perform I/O or heavy computation.
-- Dependencies are injected, not fetched. No static singletons hidden inside methods.
-- Interfaces over concrete types at boundaries.
+```sh
+bash support/scripts/up.sh    # start (waits for healthcheck)
+bash support/scripts/down.sh  # stop and remove volumes
+```
 
-## Error handling
+Connection defaults (match Docker Compose): `localhost:5432`, db `pgcheck_demo`, user/password `pgcheck`.
 
-- Errors are handled close to where they occur or propagated intentionally — not silently swallowed.
-- Error paths are as readable as the happy path.
-- Never use exceptions for flow control.
+### Schema: `store`
 
-## Tests
+```sql
+CREATE TABLE customers (
+    id         SERIAL PRIMARY KEY,
+    name       VARCHAR(100) NOT NULL,
+    email      VARCHAR(255) NOT NULL UNIQUE,
+    created_at TIMESTAMPTZ  NOT NULL DEFAULT now()
+);
 
-- Each test exercises one behaviour and has one reason to fail.
-- Test names describe the scenario and expected outcome, not the method under test.
-- No test logic that mirrors the implementation — tests should catch regressions, not echo production code.
-- Prefer real collaborators over mocks where the cost is low; mock at system boundaries.
+CREATE TABLE orders (
+    id          SERIAL PRIMARY KEY,
+    customer_id INTEGER      NOT NULL REFERENCES customers(id),
+    status      VARCHAR(20)  NOT NULL DEFAULT 'pending'
+                             CHECK (status IN ('pending', 'shipped', 'delivered', 'cancelled')),
+    total_cents INTEGER      NOT NULL CHECK (total_cents >= 0),
+    created_at  TIMESTAMPTZ  NOT NULL DEFAULT now()
+);
+```
 
-## Comments
+## Running pgcheck
 
-- Default to no comments. Well-named code is self-documenting.
-- Write a comment only when the *why* is non-obvious: a hidden constraint, a workaround for an external bug, a subtle invariant.
-- Never describe *what* the code does — that is the code's job.
+```sh
+# Unix
+./jbang pgcheck.java --sql "SELECT count(*) FROM store.customers"
 
-## General
+# Windows
+jbang.cmd pgcheck.java --sql "SELECT count(*) FROM store.customers"
+```
 
-- Duplication is bad; premature abstraction is worse. Wait for the third occurrence before abstracting.
-- Delete dead code. Version control is the history.
-- Leave the codebase in a better state than you found it — but only within the scope of the current task.
+Output is always JSON on stdout. Exit code signals result category: `0` ok · `1` sql_error · `2` policy_violation · `3` input_error · `4` connection_error.
 
----
+## Architecture
+
+Everything lives in `pgcheck.java`. JBang single-file mode requires all types in one file — this is intentional, not a shortcut. The file contains: `pgcheck` (main command), `ExitCode`, `DatabaseConfig`, `QueryOptions`, `SqlInputGroup`, `StatementType`, `PolicyGuard`, `QueryExecutor`, `ResponseWriter`, and supporting types.
+
+## Code principles
+
+- **Stay in one file.** JBang single-file mode is a hard constraint — never split into multiple files.
+- **One responsibility per type.** Each class/record has a single clear purpose.
+- **Names reveal intent.** Honest, intention-revealing names. No type suffixes, no abbreviations, no clever tricks.
+- **No silent failures.** All error paths produce a valid JSON error envelope. Exceptions are handled close to origin or propagated intentionally — never swallowed.
+- **Comments explain why, never what.** Comment only non-obvious constraints or workarounds. Well-named code is self-documenting.
+- **Don't abstract early.** Wait for the third occurrence before extracting a helper.
+- **Prefer real collaborators.** Mock only at system boundaries (JDBC, filesystem).
 
 ## Skills
 
-Agent-executable skills live in [`.claude/skills/`](.claude/skills/). Each skill file is self-contained with a YAML frontmatter header (name, description) followed by instructions.
+Agent-executable skills live in [`.claude/skills/`](.claude/skills/). Each file has YAML frontmatter (name, description) followed by instructions.
 
 | Skill | Description |
 |-------|-------------|
-| [pgcheck](.claude/skills/pgcheck.md) | Run a read-only SQL query against PostgreSQL and return structured JSON results |
+| [pgcheck](.claude/skills/pgcheck.md) | Run a SQL query against PostgreSQL and return structured JSON |
