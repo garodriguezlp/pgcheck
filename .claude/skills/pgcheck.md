@@ -1,3 +1,8 @@
+---
+name: pgcheck
+description: Run a read-only SQL query against the configured PostgreSQL database using pgcheck and return structured JSON results.
+---
+
 # pgcheck — PostgreSQL Validation Skill
 
 ## When to use pgcheck
